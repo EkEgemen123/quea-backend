@@ -495,7 +495,7 @@
             formData.append('messages', JSON.stringify(messages));
 
             try {
-                    const response = await fetch('https://quea-backend.onrender.com/api/sor',{
+                    const response = await fetch('/api/sor', {
                     method: 'POST',
                     body: formData
                 });
@@ -587,4 +587,5 @@
         }
     </script>
 </body>
+
 </html>
