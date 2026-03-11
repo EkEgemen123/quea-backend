@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quea 1.0 · Kaya Studios</title>
+    <!-- Highlight.js teması (koyu) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <!-- Font Awesome ikonları -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0b0c1a 0%, #1a1e3a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .glass-container {
+            width: 100%;
+            max-width: 1000px;
+            background: rgba(20, 25, 45, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            color: #9ca3af;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+            border-left: 4px solid #f472b6;
+            padding-left: 1rem;
+        }
+
+        .chat-area {
+            background: rgba(10, 15, 30, 0.5);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            min-height: 300px;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .message {
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #3b3f6b, #222744);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            margin: 0 0.75rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+
+        .message.user .avatar {
+            background: linear-gradient(145deg, #f472b6, #e11d48);
+        }
+
+        .message .bubble {
+            max-width: 70%;
+            padding: 1rem 1.25rem;
+            border-radius: 1.5rem;
+            background: rgba(30, 35, 55, 0.9);
+            color: #e5e7eb;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .message.user .bubble {
+            background: linear-gradient(145deg, #3b3f6b, #2a2f50);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Kod blokları için stiller */
+        .bubble pre {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 1rem;
+            overflow-x: auto;
+            margin: 0.8rem 0;
+            border: 1px solid #30363d;
+            position: relative;
+        }
+
+        .bubble pre code {
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #e6edf3;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #2d333b;
+            border: 1px solid #444c56;
+            color: #adbac7;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: 0.2s;
+            z-index: 10;
+            opacity: 0.7;
+        }
+
+        .copy-btn:hover {
+            background: #3d444d;
+            color: #cdd9e5;
+            opacity: 1;
+        }
+
+        .copy-btn.copied {
+            background: #2da44e;
+            color: white;
+            border-color: #2da44e;
+        }
+
+        .bubble p {
+            margin: 0 0 0.8rem 0;
+            line-height: 1.6;
+        }
+        .bubble p:last-child {
+            margin-bottom: 0;
+        }
+
+        .input-panel {
+            background: rgba(15, 20, 35, 0.6);
+            border-radius: 2rem;
+            padding: 1rem;
+            border: 1px solid rgba(255,255,255,0.05);
+            backdrop-filter: blur(4px);
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 2rem;
+            margin-bottom: 0.75rem;
+            color: #cbd5e1;
+            font-size: 0.9rem;
+        }
+
+        .file-info .filename {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-info button {
+            background: none;
+            border: none;
+            color: #f87171;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        textarea {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 2rem;
+            padding: 0.8rem 1.2rem;
+            color: white;
+            font-size: 1rem;
+            resize: none;
+            min-height: 50px;
+            max-height: 150px;
+            transition: border 0.2s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #f472b6;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 2rem;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #e5e7eb;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: #f472b6;
+            color: #f472b6;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(145deg, #a78bfa, #f472b6);
+            border: none;
+            color: white;
+            font-weight: bold;
+        }
+
+        .action-btn.primary:hover {
+            opacity: 0.9;
+        }
+
+        #loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 2rem;
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: #f472b6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-container">
+        <h1>Quea 1.0</h1>
+        <div class="subtitle">Kaya Studios yapımı. Akıllı, hızlı ve unutkan değil.</div>
+
+        <div class="chat-area" id="chat-area"></div>
+
+        <div class="input-panel">
+            <div id="file-info" class="file-info" style="display: none;">
+                <i class="fas fa-paperclip"></i>
+                <span class="filename" id="filename"></span>
+                <button onclick="removeFile()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="input-row">
+                <textarea id="soru" placeholder="Mesajınızı yazın... (Enter gönderir, Shift+Enter yeni satır)"></textarea>
+                <div class="action-buttons">
+                    <label for="file-input" class="action-btn" title="Dosya yükle">
+                        <i class="fas fa-paperclip"></i>
+                    </label>
+                    <button class="action-btn primary" id="gonderBtn" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="file-input" accept=".txt,.pdf,.png,.jpg,.jpeg,.gif,.webp">
+
+    <!-- Highlight.js kütüphanesi -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/csharp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/html.min.js"></script>
+
+    <script>
+        const chatArea = document.getElementById('chat-area');
+        const soruInput = document.getElementById('soru');
+        const gonderBtn = document.getElementById('gonderBtn');
+        const loadingDiv = document.getElementById('loading');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const filenameSpan = document.getElementById('filename');
+
+        let selectedFile = null;
+        let isTyping = false;
+
+        // Konuşma geçmişi
+        let messages = [
+            { role: 'assistant', content: 'Merhaba! Ben Quea 1.0, Kaya Studios tarafından geliştirilen yapay zeka asistanıyım. Size nasıl yardımcı olabilirim?' }
+        ];
+
+        window.onload = function() {
+            renderMessages();
+        };
+
+        function renderMessages() {
+            chatArea.innerHTML = '';
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${msg.role}`;
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'avatar';
+                avatar.innerHTML = msg.role === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+                
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.innerHTML = msg.content.replace(/\n/g, '<br>');
+                
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(bubble);
+                chatArea.appendChild(messageDiv);
+            });
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        soruInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                selectedFile = e.target.files[0];
+                filenameSpan.textContent = selectedFile.name;
+                fileInfo.style.display = 'flex';
+            } else {
+                removeFile();
+            }
+        });
+
+        function removeFile() {
+            selectedFile = null;
+            fileInput.value = '';
+            fileInfo.style.display = 'none';
+        }
+
+        function addMessage(role, content, isHTML = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.innerHTML = role === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            if (isHTML) {
+                bubble.innerHTML = content;
+            } else {
+                bubble.innerText = content;
+            }
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(bubble);
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+            
+            messages.push({ role, content });
+        }
+
+        function splitIntoParagraphs(text) {
+            text = text.replace(/\r\n/g, '\n');
+            return text.split(/\n\s*\n/).filter(p => p.trim() !== '');
+        }
+
+        async function typeParagraph(container, paragraphText, wordDelay = 120) {
+            const lines = paragraphText.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const words = line.split(/(\s+)/);
+                for (const word of words) {
+                    container.innerHTML += word;
+                    chatArea.scrollTop = chatArea.scrollHeight;
+                    await new Promise(resolve => setTimeout(resolve, wordDelay));
+                }
+                if (i < lines.length - 1) {
+                    container.innerHTML += '<br>';
+                    await new Promise(resolve => setTimeout(resolve, wordDelay / 2));
+                }
+            }
+        }
+
+        async function sendMessage() {
+            if (isTyping) {
+                alert('Şu anda bir cevap yazılıyor, lütfen bekleyin.');
+                return;
+            }
+
+            const soru = soruInput.value.trim();
+            if (!soru && !selectedFile) return;
+
+            let userMessage = soru;
+            if (selectedFile) {
+                userMessage += (userMessage ? ' (dosya: ' + selectedFile.name + ')' : 'Dosya: ' + selectedFile.name);
+            }
+            addMessage('user', userMessage);
+
+            soruInput.value = '';
+            gonderBtn.disabled = true;
+            loadingDiv.style.display = 'flex';
+
+            const aiMessageDiv = document.createElement('div');
+            aiMessageDiv.className = 'message ai';
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.innerHTML = '<i class="fas fa-robot"></i>';
+            const aiBubble = document.createElement('div');
+            aiBubble.className = 'bubble';
+            aiMessageDiv.appendChild(avatar);
+            aiMessageDiv.appendChild(aiBubble);
+            chatArea.appendChild(aiMessageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+
+            const formData = new FormData();
+            if (soru) formData.append('soru', soru);
+            if (selectedFile) formData.append('dosya', selectedFile);
+            formData.append('messages', JSON.stringify(messages));
+
+            try {
+                    const response = await fetch('https://quea-backend.onrender.com/api/sor',{
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    let fullAnswer = data.mukemmelCevap;
+                    // Tüm * işaretlerini temizle (frontend'de ekstra güvence)
+                    fullAnswer = fullAnswer.replace(/\*/g, '');
+                    
+                    await typeMessageWithCodeBlocks(aiBubble, fullAnswer);
+                    messages.push({ role: 'assistant', content: fullAnswer });
+                } else {
+                    aiBubble.innerHTML = '❌ Hata: ' + (data.detay || data.error || 'Bilinmeyen hata');
+                }
+            } catch (error) {
+                aiBubble.innerHTML = '❌ Bağlantı hatası: ' + error.message;
+            } finally {
+                gonderBtn.disabled = false;
+                loadingDiv.style.display = 'none';
+                removeFile();
+            }
+        }
+
+        async function typeMessageWithCodeBlocks(bubble, fullText) {
+            isTyping = true;
+            
+            const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
+            let parts = [];
+            let lastIndex = 0;
+            let match;
+
+            while ((match = codeBlockRegex.exec(fullText)) !== null) {
+                if (match.index > lastIndex) {
+                    parts.push(fullText.substring(lastIndex, match.index));
+                }
+                parts.push({
+                    lang: match[1] || 'plaintext',
+                    code: match[2]
+                });
+                lastIndex = match.index + match[0].length;
+            }
+            if (lastIndex < fullText.length) {
+                parts.push(fullText.substring(lastIndex));
+            }
+
+            for (const part of parts) {
+                if (typeof part === 'string') {
+                    const paragraphs = splitIntoParagraphs(part);
+                    for (const para of paragraphs) {
+                        const p = document.createElement('p');
+                        bubble.appendChild(p);
+                        chatArea.scrollTop = chatArea.scrollHeight;
+                        await typeParagraph(p, para, 120);
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                    }
+                } else {
+                    const pre = document.createElement('pre');
+                    pre.style.position = 'relative';
+                    const codeElem = document.createElement('code');
+                    codeElem.className = `language-${part.lang}`;
+                    codeElem.textContent = part.code;
+                    pre.appendChild(codeElem);
+
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = 'copy-btn';
+                    copyBtn.innerHTML = '<i class="fas fa-copy"></i> Kopyala';
+                    copyBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(part.code).then(() => {
+                            copyBtn.innerHTML = '<i class="fas fa-check"></i> Kopyalandı';
+                            copyBtn.classList.add('copied');
+                            setTimeout(() => {
+                                copyBtn.innerHTML = '<i class="fas fa-copy"></i> Kopyala';
+                                copyBtn.classList.remove('copied');
+                            }, 2000);
+                        });
+                    };
+                    pre.appendChild(copyBtn);
+
+                    hljs.highlightElement(codeElem);
+                    bubble.appendChild(pre);
+                    chatArea.scrollTop = chatArea.scrollHeight;
+                    await new Promise(resolve => setTimeout(resolve, 400));
+                }
+            }
+            isTyping = false;
+        }
+    </script>
+</body>
+</html>
