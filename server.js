@@ -3,18 +3,14 @@ const express = require('express');
 const multer = require('multer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
+const path = require('path');
 const cors = require('cors');
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
 
-// CORS ayarları - Netlify'dan gelen istekler için
-app.use(cors({
-    origin: ['https://quea.netlify.app', 'http://localhost:3000'], // Netlify URL'inizi ekleyin
-    methods: ['POST', 'GET'],
-    allowedHeaders: ['Content-Type']
-}));
-
+// CORS – Tüm originlere izin ver (geçici)
+app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
@@ -26,7 +22,7 @@ const GEMINI_KEYS = [
     process.env.GEMINI_API_KEY_3,
     process.env.GEMINI_API_KEY_4,
     process.env.GEMINI_API_KEY_5
-].filter(key => key); // Boş olanları filtrele
+].filter(key => key);
 
 console.log(`🚀 ${GEMINI_KEYS.length} adet Gemini API anahtarı yüklendi`);
 
@@ -54,7 +50,7 @@ function cleanResponse(text) {
     return cleanedText;
 }
 
-// Gemini'ye istek at - başarısız olursa sonraki anahtarı dene
+// Gemini'ye istek at - failover
 async function callGeminiWithFallback(prompt, dosya = null) {
     let lastError = null;
     
@@ -90,19 +86,22 @@ async function callGeminiWithFallback(prompt, dosya = null) {
         } catch (error) {
             console.error(`❌ Gemini API anahtarı ${i + 1} başarısız:`, error.message);
             lastError = error;
-            // Sonraki anahtara geç
         }
     }
     
     throw new Error(`Tüm Gemini API anahtarları başarısız. Son hata: ${lastError?.message}`);
 }
 
+// API endpoint
 app.post('/api/sor', upload.single('dosya'), async (req, res) => {
     try {
         const { soru, messages } = req.body;
         const dosya = req.file;
 
-        // Mesaj geçmişini parse et
+        if (!soru && !dosya) {
+            return res.status(400).json({ success: false, error: 'Soru veya dosya gerekli' });
+        }
+
         let parsedMessages = [];
         if (messages) {
             try {
@@ -112,7 +111,7 @@ app.post('/api/sor', upload.single('dosya'), async (req, res) => {
             }
         }
 
-        // Prompt'u oluştur
+        // Prompt oluştur
         let prompt = SYSTEM_PROMPT + '\n\n### Sohbet Geçmişi:\n';
 
         parsedMessages.forEach(msg => {
@@ -122,28 +121,33 @@ app.post('/api/sor', upload.single('dosya'), async (req, res) => {
 
         prompt += `\nKullanıcı: ${soru || '(dosya eklendi)'}\nQuea:`;
 
-        // Gemini'yi dene (failover ile)
         const cevap = await callGeminiWithFallback(prompt, dosya);
-        
-        // Cevabı temizle
         const cleanedCevap = cleanResponse(cevap);
+
+        if (dosya) fs.unlinkSync(dosya.path);
 
         res.json({ success: true, mukemmelCevap: cleanedCevap });
 
     } catch (error) {
-        console.error('Backend hatası:', error);
+        console.error('❌ Backend hatası:', error);
         if (req.file) fs.unlinkSync(req.file.path);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
+// Health check
 app.get('/health', (req, res) => {
     res.json({ 
         status: 'OK', 
         apiKeys: GEMINI_KEYS.length,
-        message: 'Quea 1.0 backend çalışıyor' 
+        message: 'Quea 1.0 çalışıyor' 
     });
 });
 
+// Tüm yolları index.html'e yönlendir (SPA)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Quea 1.0 backend http://localhost:${PORT} adresinde aktif!`));
+app.listen(PORT, () => console.log(`🚀 Quea 1.0 http://localhost:${PORT} adresinde aktif!`));
